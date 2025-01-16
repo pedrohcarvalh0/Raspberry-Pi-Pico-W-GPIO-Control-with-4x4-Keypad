@@ -64,27 +64,23 @@ void init_leds_and_buzzer() {
 
 // Configura o PWM no pino do buzzer com uma frequência especificada
 void set_buzzer_frequency(uint pin, uint frequency) {
-    // Obter o slice do PWM associado ao pino
+
     uint slice_num = pwm_gpio_to_slice_num(pin);
-
-    // Configurar o pino como saída de PWM
     gpio_set_function(pin, GPIO_FUNC_PWM);
-
-    // Configurar o PWM com frequência desejada
     pwm_config config = pwm_get_default_config();
-    pwm_config_set_clkdiv(&config, clock_get_hz(clk_sys) / (frequency * 4096)); // Calcula divisor do clock
+    pwm_config_set_clkdiv(&config, clock_get_hz(clk_sys) / (frequency * 4096));
 
     pwm_init(slice_num, &config, true);
-    pwm_set_gpio_level(pin, 0); // Inicializa com duty cycle 0 (sem som)
+    pwm_set_gpio_level(pin, 0);
 }
 
 // Função para tocar o buzzer por um tempo especificado (em milissegundos)
 void play_buzzer(uint pin, uint frequency, uint duration_ms) {
 
-    set_buzzer_frequency(pin, frequency);    // Configura a frequência do buzzer
-    pwm_set_gpio_level(pin, 2048);           // Configura duty cycle para 50%
-    sleep_ms(duration_ms);                   // Mantém o som pelo tempo especificado
-    pwm_set_gpio_level(pin, 0);              // Desliga o som
+    set_buzzer_frequency(pin, frequency);
+    pwm_set_gpio_level(pin, 2048);
+    sleep_ms(duration_ms);
+    pwm_set_gpio_level(pin, 0);
 }
 
 // Verifica qual tecla foi pressionada
@@ -141,6 +137,7 @@ void control_leds_and_buzzer(char key) {
 }
 
 int main() {
+    
     stdio_init_all();
     init_gpio();
     init_leds_and_buzzer();
