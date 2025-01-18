@@ -8,7 +8,7 @@
 #define BLUE_LED_PIN 12
 #define RED_LED_PIN 13
 
-//Definição da porta GGPIO do BUZZER
+// Definição da porta GPIO do BUZZER
 #define BUZZER_PIN 21
 
 // Define os GPIOs para as linhas e colunas do teclado matricial 4x4
@@ -44,7 +44,6 @@ void init_gpio() {
 
 // Inicializa LEDs e Buzzer
 void init_leds_and_buzzer() {
-    
     gpio_init(GREEN_LED_PIN);
     gpio_set_dir(GREEN_LED_PIN, GPIO_OUT);
     gpio_put(GREEN_LED_PIN, 0);
@@ -64,34 +63,30 @@ void init_leds_and_buzzer() {
 
 // Configura o PWM no pino do buzzer com uma frequência especificada
 void set_buzzer_frequency(uint pin, uint frequency) {
-
     uint slice_num = pwm_gpio_to_slice_num(pin);
     gpio_set_function(pin, GPIO_FUNC_PWM);
     pwm_config config = pwm_get_default_config();
     pwm_config_set_clkdiv(&config, clock_get_hz(clk_sys) / (frequency * 4096));
-
     pwm_init(slice_num, &config, true);
     pwm_set_gpio_level(pin, 0);
 }
 
-// Função para tocar o buzzer por um tempo especificado (em milissegundos)
+// Toca o buzzer por um tempo especificado (em milissegundos)
 void play_buzzer(uint pin, uint frequency, uint duration_ms) {
-
     set_buzzer_frequency(pin, frequency);
     pwm_set_gpio_level(pin, 2048);
     sleep_ms(duration_ms);
     pwm_set_gpio_level(pin, 0);
 }
 
-// Verifica qual tecla foi pressionada
+// Verifica qual tecla está pressionada
 char scan_keypad() {
     for (int row = 0; row < ROWS; row++) {
         gpio_put(row_pins[row], 0); // Configura a linha atual como LOW
 
         for (int col = 0; col < COLS; col++) {
-            if (gpio_get(col_pins[col]) == 0) { // Tecla pressionada
-                while (gpio_get(col_pins[col]) == 0); // Aguarda a tecla ser solta
-                gpio_put(row_pins[row], 1); // Restaura a linha para HIGH
+            if (gpio_get(col_pins[col]) == 0) {
+                gpio_put(row_pins[row], 1);
                 return key_map[row][col];
             }
         }
@@ -126,7 +121,7 @@ void control_leds_and_buzzer(char key) {
             gpio_put(RED_LED_PIN, 1);
             break;
         case '#':
-            play_buzzer(BUZZER_PIN, 3350, 500); // Toca o buzzer a 1000 Hz por 500 ms
+            play_buzzer(BUZZER_PIN, 3350, 500);
             break;
         default:
             gpio_put(GREEN_LED_PIN, 0);
@@ -137,7 +132,6 @@ void control_leds_and_buzzer(char key) {
 }
 
 int main() {
-    
     stdio_init_all();
     init_gpio();
     init_leds_and_buzzer();
@@ -145,13 +139,20 @@ int main() {
     printf("Teclado Matricial 4x4 Controle de LEDs e Buzzer Iniciado.\n");
     printf("A - Aciona LED verde\nB - Aciona LED azul\nC - Aciona LED vermelho\nD - Aciona todos os LEDs\n# - Aciona Buzzer\n\n");
 
+    char previous_key = '\0'; // Armazena a tecla previamente pressionada
+
     while (1) {
-        char key = scan_keypad();
-        if (key != '\0') {
-            printf("Tecla pressionada: %c\n", key);
-            control_leds_and_buzzer(key);
+        char current_key = scan_keypad();
+
+        if (current_key != previous_key) { // Verifica se a tecla mudou
+            if (current_key != '\0') {
+                printf("Tecla pressionada: %c\n", current_key);
+            }
+            control_leds_and_buzzer(current_key);
+            previous_key = current_key; // Atualiza a tecla anterior
         }
-        sleep_ms(100);
+
+        sleep_ms(50); // Debounce
     }
 
     return 0;
